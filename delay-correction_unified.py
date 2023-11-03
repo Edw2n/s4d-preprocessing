@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('config', help="config file")
 args = parser.parse_args()
 
-m = __import__(args.config.split('.')[0], fromlist=['target_dir', 'OPTION'])
+config = args.config.replace('/','.')
+m = __import__(config[:-3], fromlist=['target_dir', 'OPTION'])
 TAKEN_FOLDER = f'{m.target_dir}/taken{"_" if len(m.OPTION) > 0 else ""}{m.OPTION}'
 LOADED_FOLDER = f'{m.target_dir}/loaded'
 LOG_FILE_NAME = glob(os.path.join(TAKEN_FOLDER, '*restored.pickle'))[0].split('/')[-1]
@@ -39,10 +40,16 @@ LOG_FILE_NAME = glob(os.path.join(TAKEN_FOLDER, '*restored.pickle'))[0].split('/
 #         print(param_num, log['taken_path'])
 
 def get_diff_log(prev, curr):
-    dir1 = int(prev.split('_')[0])
-    img1 = int(prev.split('_')[-1][:-4])
-    dir2 = int(curr.split('_')[0])
-    img2 = int(curr.split('_')[-1][:-4])
+    try:
+        
+        dir1 = int(prev.split('_')[0])
+        img1 = int(prev.split('_')[-1][:-4])
+        dir2 = int(curr.split('_')[0])
+        img2 = int(curr.split('_')[-1][:-4])
+    except Exception as e:
+        diff = 'undefined'
+        print(e)
+        return diff
     diff = None
     if dir1 == dir2:
         diff = img2 - img1
@@ -155,6 +162,8 @@ def get_delay_info(discontinuous_info):
         print(key)
         print(val)
         while True:
+            if val['diff'] == 'undefined' and val['prev'] == 'None' and val['curr'] == 'None':
+                break
             user_input = input(f'is it delay? y/n.')
             # 시작 이미지 , 마지막 이미지, dp 이미지가 같은지 체크 
             # 시작 이미지 -1, 마지막 이미지 +1이 다른 이미진지 체크
@@ -185,17 +194,33 @@ def detect_delay(data):
     '''
     prev = None
     delays = {}
-    for dped_path, options_log in data.items():
+    # print(data)
+    for dped_path, envs_log in data.items():
         # check continuous
-        taken_list = list(map(lambda x: x['taken_path'].split('/')[-1], options_log.values()))
-        discontinuous_info, solvable = is_continuous(prev, taken_list)
-        if discontinuous_info:
-            print(taken_list)
-            print(dped_path)
-            delay_info = get_delay_info(discontinuous_info)
-            if delay_info:
-                delays[dped_path] = delay_info
-        prev = taken_list[-1] # solve 하면 고쳐야 하지 않오? 요건 이따 보자요
+        print(envs_log)
+        for env_num, options_log in envs_log.items():
+            # print(options_log)
+            try:
+                taken_list = list(map(lambda x: x['taken_path'].split('/')[-1] if x['taken_path'] else 'None', options_log.values()))
+            except Exception as e:
+                options_log = list(options_log.values())
+                print(options_log)
+                taken_list = []
+                for x in options_log:
+                    try:
+                        taken_list.append(x['taken_path'].split('/')[-1])
+                    except Exception as e :
+                        print(e)
+                        taken_list.append('None')
+                
+            discontinuous_info, solvable = is_continuous(prev, taken_list)
+            if discontinuous_info:
+                print(taken_list)
+                print(dped_path)
+                delay_info = get_delay_info(discontinuous_info)
+                if delay_info:
+                    delays[dped_path] = delay_info
+            prev = taken_list[-1] # solve 하면 고쳐야 하지 않오? 요건 이따 보자요
     return delays
 
 def correct_delay(data, delay_info):
@@ -255,7 +280,6 @@ def fill_blanks(taken_paths, blanks):
         
 with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
     data = pickle.load(f)
-
     # step1
     delays = detect_delay(data)
 
