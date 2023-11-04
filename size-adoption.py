@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('config', help="config file")
 args = parser.parse_args()
 
-m = __import__(args.config.split('.')[0], fromlist=['target_dir', 'OPTION'])
+config = args.config.replace('/','.')
+m = __import__(config[:-3], fromlist=['target_dir', 'OPTION'])
 
 def crop(original, target, ratio=(1,1), start=(700,700), padding = 2):
     
@@ -124,6 +125,21 @@ def padding_selection(crop_info, original, target):
 # for 1 image
 with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
     data = pickle.load(f)
+    
+    # will_be_removed = []
+    # for dped_path, dp_log in data.items():
+    #     for env_name, env_log in dp_log.items():
+    #         for param, param_log in env_log.items():
+    #             if 'taken_path' not in param_log or 'fail' in param_log['taken_path']:
+    #                 will_be_removed.append(dped_path)
+    #                 print(dped_path)
+    #                 print(env_name)
+    #                 print(param,env_log)
+    #                 # print('prev env log:', prev)
+    
+    # for dped_path in set(will_be_removed):
+    #     del data[dped_path]
+            
     selected_targets = target_selection(data)
     
     print('selected:', selected_targets)

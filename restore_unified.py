@@ -29,6 +29,7 @@ def handle_continuous_missed(log, param_num, after_logs, after_folder, before_fo
     estimated_taken_path = None
     auto_taken = False
     param_num_v = param_num
+    target_folder = None
     while(True): 
         param_num_v +=1
         if param_num_v < m.PARAM_TOTAL_NUM:
@@ -44,7 +45,7 @@ def handle_continuous_missed(log, param_num, after_logs, after_folder, before_fo
         if after_folder_v == before_folder:
             print('## before-v/after-v folders are same')
             print(f'#### before-v: {before_folder}/{before_img}, after-v: {after_folder_v}/{after_img_v}')
-
+            target_folder = before_folder
             if 'CANON' in before_folder and '.JPG' in before_img:
                 if 'CANON' in after_folder_v and '.JPG' in after_img_v:
                     estimated_img_gap = int(after_img_v[4:-4]) - int(before_img[4:-4])
@@ -59,7 +60,7 @@ def handle_continuous_missed(log, param_num, after_logs, after_folder, before_fo
     if estimated_img_gap - (param_num_v - param_num) == 2:
         estimated_img = before_img[:4] + f'{int(before_img[4:-4]) + 1:04}' + before_img[-4:]
         print('##### Img number diff between Before and After is 2')
-        estimated_taken_path = f'{after_folder}/{estimated_img}'
+        estimated_taken_path = f'{target_folder}/{estimated_img}'
         auto_taken = True
     return estimated_taken_path, auto_taken       
 
@@ -96,6 +97,7 @@ def get_missed_imgpath(param_num, log, prev_log, after_logs):
             estimated_img_gap = int(after_img[4:-4]) - int(before_img[4:-4])
         else:
             estimated_taken_path, auto_taken = handle_continuous_missed(log, param_num, after_logs, after_folder, before_folder, before_img)
+            return estimated_taken_path, auto_taken
             
         if estimated_img_gap ==2:
             estimated_img = before_img[:4] + f'{int(before_img[4:-4]) + 1:04}' + before_img[-4:]
@@ -196,12 +198,22 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
     to_be_filled = [
       
     ]
+    
+    def is_valid_estimated_path(path):
+        if not path:
+            return False
+        
+        img_name = path.split('/')[-1]
+        if int(img_name.split('.')[0][4:]) >=10000:
+            return False
+        
+        return True
 
     def handle_param_group_exceptions(log, dped_path, env_num):
         for param_num in list(log['exceptions_params']):
             estimated_taken_path, auto_taken = get_missed_imgpath(param_num, log['options_log'], log['prev_log'], log['after_log'])
             print(estimated_taken_path)
-            if estimated_taken_path:
+            if is_valid_estimated_path(estimated_taken_path):
                 # 사용자 입력받아서 체크 후 전처리
                 while True:
                     print('dped:', dped_path)
@@ -240,15 +252,14 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
                     else:
                         print('Please enter character among (y/n/rm).')
             else:
-                print('exception!!!')
+                print('exception!!! not valid!!!!!')
                 print('dped:', dped_path)
                 print('dped:', env_num)
                 print('exception params:', param_num)
                 print('curr log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['options_log'].values())))
                 print('prev log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['prev_log'].values())))
-                user_input = input(f'##### exception  to taken? (please take one of y/n/rm).')
+                # input(f'##### implement new!!.')
  
-
     for dped_path, env_logs in exceptions_info.items():
         
         # if dped_path in remove_list: # 왜 필요한지 이따 체크
@@ -283,7 +294,7 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
                         print(f'##not solved env num: {env_num}')
                         print(f'##not solved params: {not_solved}')
                         idx = keys.index(dped_path)
-                        next_key = keys[idx+1]
+                        # next_key = keys[idx+1]
                         cnt +=len(not_solved)
                         not_solved_path = True
                     if dped_path in remove_list:
@@ -292,6 +303,7 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
                 not_solved_dp +=1
 
         print(f'Total {cnt} logs are not solved')
+        print(f'Total {len(exceptions_info)} path is not perfect')
         print(f'Total {len(remove_list)} log sets are removed')
         print(f'Total {len(updated_log)} among {m.VALID_LENGTH} are perfects(full params logged)')
 

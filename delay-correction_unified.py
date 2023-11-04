@@ -123,10 +123,17 @@ def is_continuous(prev, taken_list):
 def user_input_handler():
     pass
 
-def decide_correction(key, delay_info):
+def decide_correction(key, delay_info, start_init):
     correction_info = None
     while True:
-        user_input = input(f'select the correction target prev/next.')
+        if delay_info['prev'] == 'None' and delay_info['curr'] != 'None':
+            user_input = 'prev'
+        elif delay_info['prev'] != 'None' and delay_info['curr'] == 'None':
+            user_input = 'next'
+        elif delay_info['diff'] == 2 and start_init:
+            user_input = 'prev'
+        else:
+            user_input = input(f'select the correction target prev/next.')
 
         if user_input == 'prev':
             # get prev correction info
@@ -137,34 +144,74 @@ def decide_correction(key, delay_info):
                     missed = delay_info['prev'][:-8] + '9999'+ '.JPG'
                 else:
                     missed = delay_info['curr'][:-8] + f'{int(curr_num)-1:04}' + '.JPG'
+                if start_init:
+                    start = start_init
+                    start_init = None
+                else:
+                    start = int(key.split('_')[-1]) - (delay_info["diff"] -1)
                 estimated = {
-                    'start': int(key.split('_')[-1]) - (delay_info["diff"] -1),
+                    'start': start,
                     'end': int(key.split('_')[-1])-1,
                     'missed': missed
                 }
                 print(f"estrimated correction info:{estimated}")
-                user_input = input('do you take this suggestion? y/n')
+                # user_input = input('do you take this suggestion? y/n')
+                user_input = 'y'
                 if user_input == 'y':
-                    return estimated
-                print('new case! implement for this case!')
-            break
+                    return estimated, start_init
+                # print('new case1! implement for this case!')
+            elif delay_info["diff"] == 'undefined':
+                ll =get_diff_log(delay_info['prev_delay_prev'],delay_info['curr'])
+                print(ll)
+                if ll != 'undefined' and int(ll)>0 and int(ll)<27:
+                    start_init = int(key.split('_')[-1]) - ll
+                    # print(key)
+                    # print(ll)
+                    # start = int(key.split('_')[-1]) - 1
+                    # end = int(input('end index(from 1)?'))
+                    # missed = input('missed?(if none, type none')
+                    # estimated = {
+                    #     'start': start,
+                    #     'end': end,
+                    #     'missed': missed
+                    # }
+                else:
+                    user_input = input('is it delay? (y/n)')
+                    if user_input == 'y':
+                        start_init = int(input('start param num?'))
+                # print(f"estrimated correction info:{estimated}")
+                # user_input = input('do you take this suggestion? y/n')
+                # if user_input == 'y':
+                #     return estimated, start_init
+                # start, end check
+                return correction_info, start_init
+            else:
+                print('new case3!')
         elif user_input == 'next':
             # get next correction info
-            print('new case! implement for this case!')
-            break
+            if delay_info["diff"] == 'undefined': #curr not defined (next에서 고치게 두기)
+                pass
+            else:
+                print('new case2! implement for this case!')
         else:
             print('Please enter character among (y/n).')
-        return correction_info
+        print('return here')
+        return correction_info, start_init
 
 def get_delay_info(discontinuous_info):
     delay_info = []
+    prev_delay_prev = None
+    start_init = None
     for key, val in discontinuous_info.items():
-        print(key)
+        print('hui',key)
         print(val)
         while True:
             if val['diff'] == 'undefined' and val['prev'] == 'None' and val['curr'] == 'None':
                 break
-            user_input = input(f'is it delay? y/n.')
+            elif val['diff'] in [2, 'undefined'] and (key != 'pram_1' or (key=='pram_1' and val['curr'] == 'None')):
+                user_input = 'y'
+            else:
+                user_input = input(f'is it delay? y/n.')
             # 시작 이미지 , 마지막 이미지, dp 이미지가 같은지 체크 
             # 시작 이미지 -1, 마지막 이미지 +1이 다른 이미진지 체크
             # 리스트에 blank 없는지 체크 
@@ -172,8 +219,14 @@ def get_delay_info(discontinuous_info):
             if user_input == 'y':
                 # start, end, missed를 찾아줘야함.
                 # estimated = missed 로
-                correction_info = decide_correction(key, val)
-                delay_info.append(correction_info)
+                val['prev_delay_prev'] = prev_delay_prev
+                X = decide_correction(key,val,start_init)
+                print(X)
+                correction_info, start_init = X
+                prev_delay_prev = val['prev']
+                if correction_info:
+                    delay_info.append(correction_info)
+                
                 break
             elif user_input == 'n':
                 break
@@ -198,6 +251,7 @@ def detect_delay(data):
     for dped_path, envs_log in data.items():
         # check continuous
         print(envs_log)
+        env_delays = {}
         for env_num, options_log in envs_log.items():
             # print(options_log)
             try:
@@ -219,8 +273,10 @@ def detect_delay(data):
                 print(dped_path)
                 delay_info = get_delay_info(discontinuous_info)
                 if delay_info:
-                    delays[dped_path] = delay_info
+                    env_delays[env_num] = delay_info
             prev = taken_list[-1] # solve 하면 고쳐야 하지 않오? 요건 이따 보자요
+        if env_delays:
+            delays[dped_path] = env_delays
     return delays
 
 def correct_delay(data, delay_info):
@@ -230,33 +286,50 @@ def correct_delay(data, delay_info):
     # end-1 <- end
     # end <- missed
 
-
-    sorted_delay_info = dict(sorted(delay_info.items(), key=lambda x: x[1][0]['missed']))
+    # x = list(delay_info.items())[0]
+    # env_del_info = list(x[1].values())[0][0]['missed']
+    # print(env_del_info)
+    # param_del_info = env_del_info[0]['missed']
+    # print(param_del_info['missed'])
+    # print(list((list(x[1].values())[0].values()))[0]['missed'])
+    sorted_delay_info = dict(sorted(delay_info.items(), key=lambda x: list(x[1].values())[0][0]['missed']))
     update_targets = ['camera_folder', 'img_name', 'taken_path']
 
     for dped_path, delay_info in sorted_delay_info.items():
-        for delay in delay_info: # delay_info 내 delay끼리 구간 안겹친다 가정
-            for i in range(delay['start'], delay['end']):
-                next_log = data[dped_path][i+1]
-                update_info = map(lambda update_target: next_log[update_target], update_targets)
-                data[dped_path][i].update(update_info)
-            
-            folder, _, img = delay['missed'].split('_')
-            img = 'IMG_' + img
+        for env, env_delay_info in delay_info.items():
+            for delay in env_delay_info: # delay_info 내 delay끼리 구간 안겹친다 가정
+                for i in range(delay['start'], delay['end']):
+                    next_log = data[dped_path][env][i+1]
+                    # print(next_log)
+                    if 'taken_path' not in next_log:
+                        next_log['taken_path'] = 'None'
+                    
+                    update_info = list(map(lambda update_target: next_log[update_target], update_targets))
+                    updates = dict(zip(update_targets, update_info))
+                    print(updates)
+                    print(data[dped_path][env][i])
+                    data[dped_path][env][i].update(updates)
+                
+                if delay['missed'] !='none':
+                    folder, _, img = delay['missed'].split('_')
+                    img = 'IMG_' + img
 
-            #copy src to dst
-            src = f'{LOADED_FOLDER}/{folder}CANON/{img}'
-            taken_path = f'{TAKEN_FOLDER}/{delay["missed"]}'
-            shutil.copyfile(src, taken_path)
+                    #copy src to dst
+                    src = f'{LOADED_FOLDER}/{folder}CANON/{img}'
+                    taken_path = f'{TAKEN_FOLDER}/{delay["missed"]}'
+                    shutil.copyfile(src, taken_path)
 
-            update_info = {
-                'camera_folder': folder,
-                'img_name': img,
-                'taken_path': taken_path
-            }
-            data[dped_path][delay['end']].update(update_info)
-            print(delay_info)
-            print(list(map(lambda x: x['taken_path'], data[dped_path].values())))
+                    update_info = {
+                        'camera_folder': folder,
+                        'img_name': img,
+                        'taken_path': taken_path
+                    }
+                    
+                    # 여기서 부터 정신 차려야 함.
+                    data[dped_path][env][delay['end']].update(update_info)
+                    print(delay_info)
+                    print(data[dped_path][env])
+                    # print(list(map(lambda x: x['taken_path'], data[dped_path][env].values())))
 
 def fill_blanks(taken_paths, blanks):
     for idx in blanks:
@@ -308,9 +381,25 @@ with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
 
     # step5
     # print(data)
+    
+    # taken fail => remove? and cnt and print
+    will_be_removed = []
+    for dped_path, dp_log in data.items():
+        for env_name, env_log in dp_log.items():
+            for param, param_log in env_log.items():
+                if 'taken_path' not in param_log or 'fail' in param_log['taken_path']:
+                    will_be_removed.append(dped_path)
+                    print(dped_path)
+                    print(env_name)
+                    print(param,env_log)
+                    # print('prev env log:', prev)
+    
+    for dped_path in set(will_be_removed):
+        del data[dped_path]
+                    
     with open(f'{TAKEN_FOLDER}/taken_log_corrected.pickle', 'wb') as f:
         pickle.dump(data, f)
-        print('correction logs are saved')
+        print(f'{len(data)} correction logs are saved')
 
     
 
