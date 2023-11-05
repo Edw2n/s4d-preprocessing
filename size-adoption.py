@@ -41,30 +41,33 @@ ADOPTION_INFO_FILE_NAME = 'adoption.pickle'
 
 def target_selection(data):
     selected_targets = {}
-    for dped_path, options_log in data.items():
-        print(f"display original image: {dped_path}")
-        dped = cv2.imread(dped_path, cv2.IMREAD_COLOR)
+    for dped_path, envs_log in data.items():
+        r_dped_path = dped_path.replace('s4d','edw2n')
+        print(f"display original image: {r_dped_path}")
+        
+        dped = cv2.imread(r_dped_path, cv2.IMREAD_COLOR)
         cv2.imshow('displayed', dped)
         
         k = cv2.waitKey(1000)
         user_input = input(f'##### select? (if yes, enter s).\n')
         if user_input == 's':
-            for param_num,  taken_log in options_log.items():
-                print(f'param num: {param_num},', taken_log['taken_path'])
-                taken = cv2.imread(taken_log['taken_path'], cv2.IMREAD_COLOR)
-                cv2.imshow('taken', taken)
-                k = cv2.waitKey(1000)
-                if k==27:    # Esc key to stop
-                    break
-                elif k==-1:  # normally -1 returned,so don't print it
-                    user_input = input(f'##### select this params??(enter s).\n')
-                    if user_input == 's':
-                        selected_targets[dped_path] = taken_log['taken_path']
+            for env_num, options_log in envs_log.items():
+                for param_num,  taken_log in options_log.items():
+                    print(f'param num: {param_num},', taken_log['taken_path'])
+                    taken = cv2.imread(taken_log['taken_path'], cv2.IMREAD_COLOR)
+                    cv2.imshow('taken', taken)
+                    k = cv2.waitKey(1000)
+                    if k==27:    # Esc key to stop
                         break
+                    elif k==-1:  # normally -1 returned,so don't print it
+                        user_input = input(f'##### select this params??(enter s).\n')
+                        if user_input == 's':
+                            selected_targets[r_dped_path] = taken_log['taken_path']
+                            break
+                        else:
+                            continue
                     else:
-                        continue
-                else:
-                    print('exception is occured') # else print its value                
+                        print('exception is occured') # else print its value                
         print('all params are displayed')
         user_input = input(f'##### show next displayed image?(please take one of n(no) or enter).\n')
         if user_input == 'n':

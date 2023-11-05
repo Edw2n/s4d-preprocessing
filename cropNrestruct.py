@@ -19,7 +19,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('config', help="config file")
 args = parser.parse_args()
 
-m = __import__(args.config.split('.')[0], fromlist=['target_dir', 'OPTION', 'PARAM_TOTAL_NUM'])
+
+config = args.config.replace('/','.')
+m = __import__(config[:-3], fromlist=['target_dir', 'OPTION', 'PARAM_TOTAL_NUM'])
 
 def crop(original, target, ratio=(1,1), start=(185,255), padding = 2):
 
@@ -49,55 +51,58 @@ def crop(original, target, ratio=(1,1), start=(185,255), padding = 2):
 def crop_items(items):
     remove_list = []
     cropped = None
-    for dped_path, option_logs in items:
-        original = Image.open(dped_path)
-        target_class_dir = dped_path.split('/')[-2]
+    for dped_path, env_logs in items:
+        r_dped_path = dped_path.replace('s4d','edw2n')
+        print(f"display original image: {r_dped_path}")
+        original = Image.open(r_dped_path)
+        target_class_dir = r_dped_path.split('/')[-2]
         # print(dped_path)
-        for param_num, log in option_logs.items():
-            taken_path = log['taken_path']
-            # print('target path:', taken_path)
+        for env_num, option_logs in env_logs.items():
+            for param_num, log in option_logs.items():
+                taken_path = log['taken_path']
+                # print('target path:', taken_path)
 
-            # auto 일때만...
-            if 'JPG' not in log['taken_path']:
-                for i in range(5):
-                    taken_path = option_logs[i+1]['taken_path']
-                    if 'JPG' in taken_path:
-                        break
-            
-            try:
-                target = Image.open(taken_path)
-                # target.save("./test.jpg", "JPEG")
-                # target = Image.open("./test.jpg")
-                # print(target.size)
-                # try:
-                #     target.show() # 여기서 오류 나는거 같음
-                # except Exception as e:
-                #     print(e)
+                # auto 일때만...
+                if m.OPTION == 'auto' and 'JPG' not in log['taken_path']:
+                    for i in range(5):
+                        taken_path = option_logs[i+1]['taken_path']
+                        if 'JPG' in taken_path:
+                            break
                 
-                # padding = adoption_info['padding']
-                # s_x, s_y = adoption_info['start']
-                # r_w, r_h = adoption_info['ratio']
-                cropped, _ = crop(original, target, **adoption_info)
-                # file_name = taken_path.split('/')[-1]
-                file_name = dped_path.split('/')[-1]
-                
-                dst_folder = f'{CROPPED_FOLDER}/param_{param_num}/{target_class_dir}'
-                Path(dst_folder).mkdir(parents=True, exist_ok=True)
-                dst = f'{dst_folder}/{file_name}'
-            except PIL.UnidentifiedImageError as e:
-                print(e)
-                remove_list.append(dped_path)
+                try:
+                    target = Image.open(taken_path)
+                    # target.save("./test.jpg", "JPEG")
+                    # target = Image.open("./test.jpg")
+                    # print(target.size)
+                    # try:
+                    #     target.show() # 여기서 오류 나는거 같음
+                    # except Exception as e:
+                    #     print(e)
+                    
+                    # padding = adoption_info['padding']
+                    # s_x, s_y = adoption_info['start']
+                    # r_w, r_h = adoption_info['ratio']
+                    cropped, _ = crop(original, target, **adoption_info)
+                    # file_name = taken_path.split('/')[-1]
+                    file_name = r_dped_path.split('/')[-1]
+                    
+                    dst_folder = f'{CROPPED_FOLDER}/{env_num}/param_{param_num}/{target_class_dir}'
+                    Path(dst_folder).mkdir(parents=True, exist_ok=True)
+                    dst = f'{dst_folder}/{file_name}'
+                except PIL.UnidentifiedImageError as e:
+                    print(e)
+                    remove_list.append(r_dped_path)
 
-            # cropped.show()
-            if cropped:
-                cropped.save(dst)
-            else:
-                print("=======================")
-                print(taken_path)
-                print(target.size)
-                print(adoption_info)
-                print("=======================")
-            # print(f'saved in {dst}')
+                # cropped.show()
+                if cropped:
+                    cropped.save(dst)
+                else:
+                    print("=======================")
+                    print(taken_path)
+                    # print(target.size)
+                    print(adoption_info)
+                    print("=======================")
+                # print(f'saved in {dst}')
     return len(items), remove_list
 
 # size adpotion
