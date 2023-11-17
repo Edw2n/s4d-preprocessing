@@ -399,6 +399,7 @@ with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
                     
     with open(f'{TAKEN_FOLDER}/taken_log_corrected.pickle', 'wb') as f:
         pickle.dump(data, f)
+        print(data)
         print(f'{len(data)} correction logs are saved')
 
     

@@ -54,9 +54,11 @@ def handle_continuous_missed(log, param_num, after_logs, after_folder, before_fo
                 print('##### exception: before is None!')
                 estimated_img_gap = -1
                 break
-        # else:
-        #     print('## see next dped path log')
-        #     return estimated_taken_path, auto_taken 
+        else:
+            print('## before-v/after-v folders are same')
+            print(f'#### before-v: {before_folder}/{before_img}, after-v: {after_folder_v}/{after_img_v}')
+            print('## see next dped path log')
+            return estimated_taken_path, auto_taken 
     if estimated_img_gap - (param_num_v - param_num) == 2:
         estimated_img = before_img[:4] + f'{int(before_img[4:-4]) + 1:04}' + before_img[-4:]
         print('##### Img number diff between Before and After is 2')
@@ -278,6 +280,7 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
 
         # map(lambda key_path: updated_log.pop(key_path) and exceptions_info.pop(key_path), remove_list)
         pickle.dump(updated_log, f_ub) # data를 다 덤프뜨면 안됨. valid만 떠야함.
+        print(list(updated_log.values())[-1])
         print(f'updated log is saved in {TAKEN_FOLDER}/{UPDATED_LOG_FILE_NAME}') 
         
         cnt = 0

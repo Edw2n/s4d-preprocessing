@@ -138,6 +138,7 @@ if __name__ == '__main__':
         result, removed_list = zip(*p.map(crop_items, items))
         print(sum(result))
         removed_list = list(set(sum(removed_list, [])))
+        print('removed_list~~~~')
         print(removed_list) # 얘네 지워줘야함
         print(len(removed_list))
 

@@ -13,7 +13,7 @@ args = parser.parse_args()
 config = args.config.replace('/','.')
 m = __import__(config[:-3], fromlist=['target_dir', 'OPTION'])
 
-def crop(original, target, ratio=(1,1), start=(700,700), padding = 2):
+def crop(original, target, ratio=(2.74,2.74), start=(625,635), padding = 7):
     
 
     crop_info = {
