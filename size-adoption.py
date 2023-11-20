@@ -42,7 +42,7 @@ ADOPTION_INFO_FILE_NAME = 'adoption.pickle'
 def target_selection(data):
     selected_targets = {}
     for dped_path, envs_log in data.items():
-        r_dped_path = dped_path.replace('s4d','edw2n')
+        r_dped_path = dped_path.replace('s4d','s4d')
         print(f"display original image: {r_dped_path}")
         
         dped = cv2.imread(r_dped_path, cv2.IMREAD_COLOR)

@@ -52,7 +52,7 @@ def crop_items(items):
     remove_list = []
     cropped = None
     for dped_path, env_logs in items:
-        r_dped_path = dped_path.replace('s4d','edw2n')
+        r_dped_path = dped_path.replace('s4d','s4d')
         print(f"display original image: {r_dped_path}")
         original = Image.open(r_dped_path)
         target_class_dir = r_dped_path.split('/')[-2]
@@ -61,7 +61,13 @@ def crop_items(items):
             for param_num, log in option_logs.items():
                 taken_path = log['taken_path']
                 # print('target path:', taken_path)
-
+                file_name = r_dped_path.split('/')[-1]
+                    
+                dst_folder = f'{CROPPED_FOLDER}/{env_num}/param_{param_num}/{target_class_dir}'
+                Path(dst_folder).mkdir(parents=True, exist_ok=True)
+                dst = f'{dst_folder}/{file_name}'
+                if os.path.exists(dst):
+                    continue
                 # auto 일때만...
                 if m.OPTION == 'auto' and 'JPG' not in log['taken_path']:
                     for i in range(5):
@@ -84,11 +90,6 @@ def crop_items(items):
                     # r_w, r_h = adoption_info['ratio']
                     cropped, _ = crop(original, target, **adoption_info)
                     # file_name = taken_path.split('/')[-1]
-                    file_name = r_dped_path.split('/')[-1]
-                    
-                    dst_folder = f'{CROPPED_FOLDER}/{env_num}/param_{param_num}/{target_class_dir}'
-                    Path(dst_folder).mkdir(parents=True, exist_ok=True)
-                    dst = f'{dst_folder}/{file_name}'
                 except PIL.UnidentifiedImageError as e:
                     print(e)
                     remove_list.append(r_dped_path)

@@ -77,9 +77,13 @@ def get_missed_imgpath(param_num, log, prev_log, after_logs):
         before_img = before_log['img_name']
     else:
         print('## see previous dped path log')
-        before_log = list(prev_log.values())[-1]
-        before_folder = before_log['camera_folder']
-        before_img = before_log['img_name']
+        if prev_log:
+            before_log = list(prev_log.values())[-1]
+            before_folder = before_log['camera_folder']
+            before_img = before_log['img_name']
+        before_log = None
+        before_folder = None
+        before_img= None
 
     if param_num < m.PARAM_TOTAL_NUM:
         after_log = log[param_num+1]
@@ -109,7 +113,7 @@ def get_missed_imgpath(param_num, log, prev_log, after_logs):
             print(f'##### estimated img path: {estimated_taken_path}')
         else:
             print('##### exception: but before and after is not diff 2')
-    elif after_folder>before_folder:
+    elif before_folder and  after_folder>before_folder:
         print('##  before/after folders are different')
         print(f'#### before: {before_folder}/{before_img}, after: {after_folder}/{after_img}')
         if check_solo_missed(after_folder, after_img, before_folder, before_img):
@@ -259,8 +263,11 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
                 print('dped:', env_num)
                 print('exception params:', param_num)
                 print('curr log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['options_log'].values())))
-                print('prev log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['prev_log'].values())))
-                # input(f'##### implement new!!.')
+                if log['prev_log']:
+                    print('prev log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['prev_log'].values())))
+                else:
+                    print('none prev')
+            
  
     for dped_path, env_logs in exceptions_info.items():
         

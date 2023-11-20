@@ -387,7 +387,7 @@ with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
     for dped_path, dp_log in data.items():
         for env_name, env_log in dp_log.items():
             for param, param_log in env_log.items():
-                if 'taken_path' not in param_log or 'fail' in param_log['taken_path']:
+                if not param_log['taken_path'] or 'taken_path' not in param_log or 'fail' in param_log['taken_path']:
                     will_be_removed.append(dped_path)
                     print(dped_path)
                     print(env_name)
