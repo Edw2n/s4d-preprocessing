@@ -165,6 +165,7 @@ def unify_taken(data):
                         continue
                     try:
                         shutil.copyfile(taken_path, dst)
+                        print('copy:',dst)
                         taken_log['taken_path'] = dst
                     except Exception as e:
                         print(e, taken_path)
@@ -222,9 +223,13 @@ with open(f'{LODED_FOLDER}/{m.LOG_FILE_NAME}', 'rb') as f:
             if is_valid_estimated_path(estimated_taken_path):
                 # 사용자 입력받아서 체크 후 전처리
                 while True:
-                    print('dped:', dped_path)
-                    print('curr log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['options_log'].values())))
-                    print('prev log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['prev_log'].values())))
+                    try:
+                        print('dped:', dped_path)
+                        print('curr log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['options_log'].values())))
+                        print('prev log:', list(map( lambda x: x['camera_folder']+'/'+x['img_name'],log['prev_log'].values())))
+                    except Exception as e:
+                        print('error!')
+                        print(e)
                     
                     if not auto_taken:
                         user_input = input(f'##### copy missed image({estimated_taken_path}) to taken? (please take one of y/n/rm).')

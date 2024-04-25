@@ -135,6 +135,8 @@ def decide_correction(key, delay_info, start_init):
         else:
             user_input = input(f'select the correction target prev/next.')
 
+        print(user_input)
+        print('#########')
         if user_input == 'prev':
             # get prev correction info
             print(delay_info)
@@ -387,6 +389,7 @@ with open(f'{TAKEN_FOLDER}/{LOG_FILE_NAME}', 'rb') as f:
     for dped_path, dp_log in data.items():
         for env_name, env_log in dp_log.items():
             for param, param_log in env_log.items():
+                print(param_log.keys())
                 if not param_log['taken_path'] or 'taken_path' not in param_log or 'fail' in param_log['taken_path']:
                     will_be_removed.append(dped_path)
                     print(dped_path)

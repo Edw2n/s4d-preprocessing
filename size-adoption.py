@@ -13,7 +13,7 @@ args = parser.parse_args()
 config = args.config.replace('/','.')
 m = __import__(config[:-3], fromlist=['target_dir', 'OPTION'])
 
-def crop(original, target, ratio=(2.74,2.74), start=(625,635), padding = 7):
+def crop(original, target, ratio=(2.74,2.74), start=(625,635), padding = 4, size=None):
     
 
     crop_info = {
@@ -24,7 +24,7 @@ def crop(original, target, ratio=(2.74,2.74), start=(625,635), padding = 7):
     
     original_size = original.size
     modified_size = (original_size[0]*ratio[0], original_size[1]*ratio[1])
-
+    crop_info['size'] = modified_size
     # for size check
     croppedImage = target.crop((start[0]-padding, start[1]-padding, start[0] + modified_size[0] + padding, start[1]+ modified_size[1] + padding))
     # print(original.size)
@@ -42,7 +42,7 @@ ADOPTION_INFO_FILE_NAME = 'adoption.pickle'
 def target_selection(data):
     selected_targets = {}
     for dped_path, envs_log in data.items():
-        r_dped_path = dped_path.replace('s4d','s4d')
+        r_dped_path = dped_path.replace('s4d','edw2n')
         print(f"display original image: {r_dped_path}")
         
         dped = cv2.imread(r_dped_path, cv2.IMREAD_COLOR)
@@ -51,23 +51,24 @@ def target_selection(data):
         k = cv2.waitKey(1000)
         user_input = input(f'##### select? (if yes, enter s).\n')
         if user_input == 's':
-            for env_num, options_log in envs_log.items():
-                for param_num,  taken_log in options_log.items():
-                    print(f'param num: {param_num},', taken_log['taken_path'])
-                    taken = cv2.imread(taken_log['taken_path'], cv2.IMREAD_COLOR)
-                    cv2.imshow('taken', taken)
-                    k = cv2.waitKey(1000)
-                    if k==27:    # Esc key to stop
+            # for env_num, options_log in envs_log.items():
+            options_log = envs_log['l1']
+            for param_num,  taken_log in options_log.items():
+                print(f'param num: {param_num},', taken_log['taken_path'])
+                taken = cv2.imread(taken_log['taken_path'], cv2.IMREAD_COLOR)
+                cv2.imshow('taken', taken)
+                k = cv2.waitKey(1000)
+                if k==27:    # Esc key to stop
+                    break
+                elif k==-1:  # normally -1 returned,so don't print it
+                    user_input = input(f'##### select this params??(enter s).\n')
+                    if user_input == 's':
+                        selected_targets[r_dped_path] = taken_log['taken_path']
                         break
-                    elif k==-1:  # normally -1 returned,so don't print it
-                        user_input = input(f'##### select this params??(enter s).\n')
-                        if user_input == 's':
-                            selected_targets[r_dped_path] = taken_log['taken_path']
-                            break
-                        else:
-                            continue
                     else:
-                        print('exception is occured') # else print its value                
+                        continue
+                else:
+                    print('exception is occured') # else print its value                
         print('all params are displayed')
         user_input = input(f'##### show next displayed image?(please take one of n(no) or enter).\n')
         if user_input == 'n':

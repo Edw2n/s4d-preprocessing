@@ -23,7 +23,7 @@ args = parser.parse_args()
 config = args.config.replace('/','.')
 m = __import__(config[:-3], fromlist=['target_dir', 'OPTION', 'PARAM_TOTAL_NUM'])
 
-def crop(original, target, ratio=(1,1), start=(185,255), padding = 2):
+def crop(original, target, ratio=(1,1), start=(185,255), padding = 2, size=None):
 
     crop_info = {
         'start': start,
@@ -52,7 +52,7 @@ def crop_items(items):
     remove_list = []
     cropped = None
     for dped_path, env_logs in items:
-        r_dped_path = dped_path.replace('s4d','s4d')
+        r_dped_path = dped_path.replace('s4d','edw2n')
         print(f"display original image: {r_dped_path}")
         original = Image.open(r_dped_path)
         target_class_dir = r_dped_path.split('/')[-2]
